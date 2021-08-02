@@ -1,5 +1,6 @@
 const db = require("../models");
 const Invoice = db.invoices;
+const Product = db.products;
 
 exports.create = (req, res) => {
   const { name, phone, address, email, pincode, tax, discount } = req.body;
@@ -13,7 +14,13 @@ exports.create = (req, res) => {
 
   // Create a invoice
   const invoice = {
-    name, phone, address, email, pincode, tax, discount
+    name,
+    phone,
+    address,
+    email,
+    pincode,
+    tax,
+    discount,
   };
   Invoice.create(invoice)
     .then((data) => {
@@ -27,9 +34,22 @@ exports.create = (req, res) => {
 };
 
 exports.findAll = (req, res) => {
-  Invoice.findAll()
-    .then((data) => {
-      res.send(data);
+  Invoice.findAll({ order: [["createdAt", "DESC"]] })
+    .then(async (data) => {
+      const result = JSON.parse(JSON.stringify(data));
+      for (let i = 0; i < data.length; i++) {
+        const invoice = result[i];
+        const products = await Product.findAll({
+          where: { invoiceId: invoice.id },
+        });
+        const subtotal = products.reduce(
+          (acc, cur) => acc + parseFloat(cur.price),
+          0
+        );
+        invoice.products = products.length;
+        invoice.subtotal = subtotal;
+      }
+      res.send(result);
     })
     .catch((err) => {
       res.status(500).send({
