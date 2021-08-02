@@ -27,3 +27,13 @@ services:
     ports:
       - "3000:3000"
     env_file: .env
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - /app/node_modules
+      - ./frontend:/app
+    ports:
+      - "8080:8080"
+    env_file: .env
